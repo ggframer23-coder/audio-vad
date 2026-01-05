@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 
 SUPPORTED_EXTS = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".wma", ".aac"}
+SUPPORTED_OUTPUT_FORMATS = {"wav", "flac", "mp3", "m4a", "ogg", "aac", "wma"}
 
 
 @dataclass
@@ -273,7 +274,7 @@ def cut_segment(
     elif output_format == "flac":
         cmd += ["-c:a", "flac", "-compression_level", "5"]
     else:
-        raise ValueError("Unsupported output format")
+        cmd += ["-c:a", "copy"]
     cmd.append(str(output_path))
     run_cmd(cmd)
 
@@ -297,6 +298,15 @@ def resolve_inputs(paths: Sequence[str], recursive: bool) -> List[Path]:
 
 def build_output_prefix(path: Path) -> str:
     return path.stem
+
+
+def resolve_output_format(input_path: Path, output_format: str) -> str:
+    if output_format != "auto":
+        return output_format
+    ext = input_path.suffix.lower().lstrip(".")
+    if ext in SUPPORTED_OUTPUT_FORMATS:
+        return ext
+    return "flac"
 
 
 def process_file(
@@ -351,7 +361,8 @@ def process_file(
     if dry_run:
         return
 
-    ext = "wav" if output_format == "wav" else "flac"
+    output_format = resolve_output_format(input_path, output_format)
+    ext = output_format
     for idx, seg in enumerate(segments, 1):
         seg_path = output_dir / f"{prefix}_seg_{idx:04d}.{ext}"
         cut_segment(input_path, seg_path, seg.start, seg.end, output_format)
@@ -365,7 +376,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", default="./output", help="Output root directory")
     parser.add_argument("--recursive", action="store_true", help="Recurse into directories")
     parser.add_argument("--vad", default="webrtc", choices=["webrtc", "silero"], help="VAD mode")
-    parser.add_argument("--output-format", default="flac", choices=["flac", "wav"], help="Segment format")
+    parser.add_argument(
+        "--output-format",
+        default="flac",
+        choices=["auto", "flac", "wav", "mp3", "m4a", "ogg", "aac", "wma"],
+        help="Segment format (auto uses input format)",
+    )
 
     parser.add_argument("--aggressiveness", type=int, default=3, help="WebRTC VAD aggressiveness (0-3)")
     parser.add_argument("--frame-ms", type=int, default=30, help="WebRTC frame size in ms")

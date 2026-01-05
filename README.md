@@ -25,6 +25,21 @@ Requires `ffmpeg` in PATH.
 python scripts/vad_segment.py /path/to/audio/dir --recursive --output-dir ./output
 ```
 
+## Configuration Options
+
+Common CLI flags for `vad_segment.py`:
+- `--output-dir ./output` sets the output root folder.
+- `--output-format flac|wav|mp3|m4a|ogg|aac|wma` controls segment format.
+- `--vad webrtc|silero` selects the VAD backend.
+- `--aggressiveness 0-3`, `--frame-ms 10|20|30` tune WebRTC VAD.
+- `--min-speech-ms`, `--merge-gap-ms`, `--padding-ms` control segmentation behavior.
+- `--silero-model /path/to/silero_vad.jit`, `--silero-threshold`, `--silero-min-silence-ms` tune Silero VAD.
+- `--dry-run` writes timestamps only (no audio cuts).
+
+Makefile overrides (examples):
+- `make vad INPUT=./audio OUTPUT=./output OUTPUT_FORMAT=flac`
+- `make vad VAD=silero SILERO_MODEL=/path/to/silero_vad.jit`
+
 Output layout:
 
 ```
