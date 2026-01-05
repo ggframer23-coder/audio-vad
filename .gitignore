@@ -1,0 +1,7 @@
+.coverage
+*.pyc
+__pycache__/
+audio/*
+!audio/.gitkeep
+output/
+transcripts/
